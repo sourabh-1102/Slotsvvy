@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= title || "SlotSavvy - Smart Delivery Scheduling" %></title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="/style.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <i class="fas fa-shipping-fast"></i>
+        <h1>SlotSavvy</h1>
+      </div>
+      <nav class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('booking')">Book Parcel</button>
+        <button class="tab-btn" onclick="switchTab('tracking')">Track Parcel</button>
+        <button class="tab-btn" onclick="switchTab('staff')">Staff Dashboard</button>
+      </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- Booking Section -->
+      <section id="booking" class="booking-section active">
+        <h2>Book Your Parcel</h2>
+        <form id="bookingForm" action="/api/book" method="POST">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="senderName">Sender Name</label>
+              <input type="text" id="senderName" name="senderName" required value="<%= booking?.senderName || '' %>">
+            </div>
+            <div class="form-group">
+              <label for="senderAddress">Sender Address</label>
+              <textarea id="senderAddress" name="senderAddress" rows="3" required><%= booking?.senderAddress || '' %></textarea>
+            </div>
+            <div class="form-group">
+              <label for="recipientName">Recipient Name</label>
+              <input type="text" id="recipientName" name="recipientName" required value="<%= booking?.recipientName || '' %>">
+            </div>
+            <div class="form-group">
+              <label for="recipientAddress">Recipient Address</label>
+              <textarea id="recipientAddress" name="recipientAddress" rows="3" required><%= booking?.recipientAddress || '' %></textarea>
+            </div>
+            <div class="form-group">
+              <label for="recipientPhone">Recipient Phone</label>
+              <input type="tel" id="recipientPhone" name="recipientPhone" required value="<%= booking?.recipientPhone || '' %>">
+            </div>
+            <div class="form-group">
+              <label for="parcelWeight">Parcel Weight (kg)</label>
+              <input type="number" id="parcelWeight" name="parcelWeight" step="0.1" required value="<%= booking?.parcelWeight || '' %>">
+            </div>
+          </div>
+
+          <!-- Hidden input to store selectedSlot value -->
+          <input type="hidden" id="selectedSlot" name="selectedSlot" value="<%= booking?.selectedSlot || '' %>">
+
+          <div class="slot-section">
+            <h3 class="slot-title"><i class="fas fa-robot"></i> AI-Recommended Delivery Slots</h3>
+            <div class="slot-grid">
+              <% const slots = ['6-8 PM', '8-10 PM', '10-12 PM', '2-4 PM']; %>
+              <% slots.forEach((slot, index) => { %>
+                <div 
+                  class="slot-card <%= booking?.selectedSlot === slot ? 'selected' : '' %>" 
+                  onclick="selectSlot(this, '<%= slot %>')"
+                >
+                  <% if (index === 0) { %>
+                    <div class="ai-badge">AI Pick</div>
+                  <% } %>
+                  <div class="slot-time"><%= slot.replace('-', ':00 - ') %>:00</div>
+                  <div class="slot-success"><%= [85, 90, 75, 70][index] %>% Success Rate</div>
+                </div>
+              <% }); %>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn">
+            <i class="fas fa-paper-plane"></i> Book Parcel
+          </button>
+        </form>
+      </section>
+
+      <!-- Tracking Section -->
+      <section id="tracking" class="tracking-section" style="display:none;">
+        <h2>Track Your Parcel</h2>
+        <div class="tracking-input">
+          <input type="text" id="trackingId" name="trackingId" placeholder="Enter Tracking ID (e.g., SS123456)">
+          <button type="button" class="track-btn" onclick="trackParcel()">
+            <i class="fas fa-search"></i> Track
+          </button>
+        </div>
+        <div id="trackingResult" class="progress-container" style="display: none;"></div>
+      </section>
+
+      <!-- Staff Dashboard -->
+      <section id="staff" class="staff-section" style="display:none;">
+        <h2 style="margin-bottom: 30px; font-size: 1.8rem; color: #333;">
+          <i class="fas fa-user-tie" style="margin-right: 10px;"></i>
+          Staff Dashboard - Bangalore Post Office
+        </h2>
+
+        <div style="background: rgba(16, 185, 129, 0.1); padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+          <h4 style="color: #10b981; margin-bottom: 10px;">
+            <i class="fas fa-lightbulb" style="margin-right: 8px;"></i>
+            AI Optimization Suggestion
+          </h4>
+          <p><%= optimizationTip || "Group 8-10 PM deliveries in Koramangala area for 30% efficiency improvement" %></p>
+        </div>
+
+        <div class="delivery-cards">
+          <% if (deliveries && deliveries.length) { %>
+            <% deliveries.forEach(d => { %>
+              <div class="delivery-card">
+                <div class="delivery-header">
+                  <span class="tracking-id"><%= d.trackingId %></span>
+                  <span class="status-badge status-<%= d.status.toLowerCase().replace(' ', '-') %>"><%= d.status %></span>
+                </div>
+                <p><strong>Recipient:</strong> <%= d.recipient %></p>
+                <p><strong>Address:</strong> <%= d.address %></p>
+                <p><strong>Slot:</strong> <%= d.slot %></p>
+                <p><strong>Phone:</strong> <%= d.phone %></p>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <p>No deliveries to display.</p>
+          <% } %>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+<script>
+  // Tab switching function
+  function switchTab(tabId) {
+    const sections = ['booking', 'tracking', 'staff'];
+
+    sections.forEach(id => {
+      const section = document.getElementById(id);
+      if (section) {
+        section.style.display = (id === tabId) ? 'block' : 'none';
+      }
+    });
+
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+    // Add active class to clicked button
+    if (event && event.currentTarget) {
+      event.currentTarget.classList.add('active');
+    }
+  }
+
+  // Show only booking tab on page load
+  window.onload = function() {
+    switchTab('booking');
+  };
+
+  // Slot selection
+  function selectSlot(element, slotValue) {
+    document.querySelectorAll('.slot-card').forEach(card => card.classList.remove('selected'));
+    element.classList.add('selected');
+    document.getElementById('selectedSlot').value = slotValue;
+  }
+
+  // Validate booking form submission
+  document.getElementById('bookingForm').addEventListener('submit', function(e) {
+    if (!document.getElementById('selectedSlot').value) {
+      e.preventDefault();
+      alert("Please select a delivery slot.");
+    }
+  });
+
+  // Track parcel using API call
+  async function trackParcel() {
+    const trackingId = document.getElementById('trackingId').value.trim();
+    const resultDiv = document.getElementById('trackingResult');
+    if (!trackingId) {
+      alert('Please enter a tracking ID.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/track/${trackingId}`);
+      if (!response.ok) {
+        throw new Error('Parcel not found');
+      }
+      const data = await response.json();
+      if (data.success && data.parcel) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `
+          <h3>Tracking Details</h3>
+          <p><strong>Status:</strong> ${data.parcel.status}</p>
+          <p><strong>Sender:</strong> ${data.parcel.senderName}</p>
+          <p><strong>Recipient:</strong> ${data.parcel.recipientName}</p>
+          <p><strong>Delivery Slot:</strong> ${data.parcel.selectedSlot}</p>
+          <p><strong>Created At:</strong> ${new Date(data.parcel.createdAt).toLocaleString()}</p>
+        `;
+      } else {
+        resultDiv.style.display = 'block';
+        resultDiv.textContent = 'No tracking information available.';
+      }
+    } catch (error) {
+      resultDiv.style.display = 'block';
+      resultDiv.textContent = `Error: ${error.message}`;
+    }
+  }
+</script>
+</body>
+</html>
