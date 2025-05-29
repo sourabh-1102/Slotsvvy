@@ -20,7 +20,7 @@ if (TWILIO_SID && TWILIO_AUTH_TOKEN) {
 
 // App Setup
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 app.set('view engine', 'ejs');
 
 // Middleware
