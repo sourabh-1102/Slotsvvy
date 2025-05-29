@@ -176,17 +176,6 @@
     }
 
     lucide.createIcons();
-
-    document.addEventListener('DOMContentLoaded', () => {
-     showSuccess = <%= showSuccess ? 'true' : 'false' %>;
-    if (showSuccess) {
-      const popup = document.getElementById('popup');
-      popup.style.display = 'block';
-      popup.style.opacity = '1';
-      setTimeout(() => { popup.style.opacity = '0'; }, 3000);
-      setTimeout(() => { popup.style.display = 'none'; }, 3500);
-    }
-  });
   </script>
 </body>
 </html>
