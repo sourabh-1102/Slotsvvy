@@ -103,7 +103,7 @@ app.post('/api/book', [
     const parcel = new Parcel({ ...req.body, trackingId });
     await parcel.save();
 
-    const smsText = `Parcel booked! Tracking ID: http://localhost:${PORT}/api/track/${trackingId}, Slot: ${req.body.selectedSlot}`;
+    const smsText = `Parcel booked! Tracking ID: https://slotsvvy.onrender.com/api/track/${trackingId}, Slot: ${req.body.selectedSlot}`;
     await sendSMS(req.body.recipientPhone, smsText);
 
     res.status(201).json({ success: true, trackingId });
